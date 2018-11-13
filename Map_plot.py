@@ -6,32 +6,41 @@ import pandas as pd
 import csv
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
-#数値の丸め込み関数--------------------------------------------------
-def RoundUp(data, interval):
-    return int((data + interval - 0.001) / interval) * interval
 
 #初期設定------------------------------------------------------------
 #csvファイルからリスト型で行列を取得  #rstrip("末尾の不要な文字")=>末尾の改行コードを削除
-csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/split_OP_02_sample.csv').readlines()]
-csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/split_OP_02_y_sample.csv').readlines()]
+csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/Ex1/Split_OP.csv').readlines()]
+csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/Ex1/Split_OP_y.csv').readlines()]
 #xの事前分布の強度/////////////////
 ramuda=0.1
 #ロボットプラットフォームの寸法
-Height = 1.0
+Height = 0.273 + 0.01 + 0.091
 length_tilt = 0.038 + 0.01 + 0.02
 #計測範囲[m]//////////////////////
 delta = 0.2
 xmin = -1.0
 xmax = 1.0
-ymin = 2.0
-ymax = 4.0
+ymin = 0.6
+ymax = 2.6
+#END初期設定--------------------------------------------------------
+
+#数値の丸め込み関数--------------------------------------------------
+def RoundUp(data, interval):
+    return int((data + interval - 0.001) / interval) * interval
+#int型へのキャスト問題を解消するための関数：(int)(0.3/0.1)=0.2となる問題
+def RangetoNum(d_num):
+    if d_num >= 0:
+        return int(d_num/delta+0.0001)
+    else:
+        return int(d_num/delta-0.0001)  
+
 #ボクセル関係/////////////////////
-Xrange = int(xmax / delta) - int(xmin / delta)
-Yrange = int(ymax / delta)
-Zrange = int(RoundUp(Height + length_tilt, delta) / delta)
+Xrange = RangetoNum(xmax) - RangetoNum(xmin)
+Yrange = RangetoNum(ymax)
+Zrange = RangetoNum(RoundUp(Height + length_tilt, delta))
 cell_size = Xrange * Yrange * Zrange
 print('x_r',Xrange,'y_r',Yrange,'z_r',Zrange,'call_size',cell_size)
-#END初期設定--------------------------------------------------------
+#------------------------------------------------------------------
 
 #行列のサイズ確認
 N=len(csv_L)
@@ -78,16 +87,18 @@ concentration_list = []
 #マッピング用リストの作成 #計測範囲内のみマップを作成する
 for num in range(cell_size):
     #ボクセル座標出す => xyz座標に直す => 位置補正する
-    x_point = (int((num % (Xrange*Yrange)) % Xrange)) * delta + xmin + (delta/2)
-    y_point = (int((num % (Xrange*Yrange)) / Xrange)) * delta + ymin + (delta/2)
-    z_point = (int(num / (Xrange*Yrange))) * delta + (delta/2)
+    x_point = int(((num % (Xrange*Yrange)) % Xrange)) * delta + xmin + (delta/2)
+    y_point = int(((num % (Xrange*Yrange)) / Xrange)) * delta + (delta/2)
+    z_point = int((num / (Xrange*Yrange))) * delta + (delta/2)
     print('num',num, 'x',x_point,'y',y_point,'z',z_point)
-    if int(num % (Xrange*Yrange) / Xrange) >= int(ymin/delta):
+    if int(num % (Xrange*Yrange) / Xrange) >= RangetoNum(ymin):
+        print("huga")
         x_list.append(x_point)
         y_list.append(y_point)
         z_list.append(z_point)
         concentration_list.append(temp_concentratin_list[num])
-
+print(ymin)
+print(RangetoNum(ymin))
 # 散布図を表示、各点の色を濃度に対応させる
 fig = plt.figure()
 ax = Axes3D(fig)
