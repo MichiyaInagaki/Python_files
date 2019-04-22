@@ -6,12 +6,17 @@ import pandas as pd
 import csv
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 import cvxpy
-
+import pywt
+from scipy.fftpack import fftn, ifftn, dct, idct
 
 #初期設定------------------------------------------------------------
 #csvファイルからリスト型で行列を取得  #rstrip("末尾の不要な文字")=>末尾の改行コードを削除
-csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1/Split_OP.csv').readlines()]
-csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1/Split_OP_y.csv').readlines()]
+#csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/Split_OP.csv').readlines()]
+#csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/Split_OP_y.csv').readlines()]
+csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/Split_OP2.csv').readlines()]
+csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/ppmm2.csv').readlines()]
+GT = pd.read_csv('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/GT.csv')
+GT_list = GT["0"].values.tolist()
 #行列のサイズ確認
 N=len(csv_L)
 M=len(csv_L[0])
@@ -68,8 +73,8 @@ constraints = [0 <= x]
 #最適化問題を解く
 prob = cvxpy.Problem(objective, constraints)
 print("Optimal value", prob.solve())
-print("Optimal var")
-print(x.value) # A numpy ndarray.
+#print("Optimal var")
+#print(x.value) # A numpy ndarray.
 #------------------------------------------------------------------
 
 
@@ -84,6 +89,18 @@ x_fine_list=[]
 y_fine_list=[]
 z_fine_list=[]
 concentration_list = []
+
+#解の書き出し
+#pandasのDataFrame型に変換
+#res_x=pd.DataFrame(temp_concentration_list)
+#CSV出力
+#res_x.to_csv('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/GT_2points.csv')
+
+#見やすいマッピング用の閾値を取るためにソートする***
+sort_concentration_list = sorted(temp_concentration_list)
+cut_concentration = sort_concentration_list[int(cell_size/100*95.75)]   #96.25 #87.25
+print("voxel_cut_concentration", cut_concentration.real)
+
 #マッピング用リストの作成 #計測範囲内のみマップを作成する
 for num in range(cell_size):
     '''
@@ -103,9 +120,9 @@ for num in range(cell_size):
     x_point = int(((num % (Xrange*Yrange)) % Xrange)) * delta #+ xmin
     y_point = int(((num % (Xrange*Yrange)) / Xrange)) * delta -ymin
     z_point = int((num / (Xrange*Yrange))) * delta
-    print('num',num, 'x',x_point,'y',y_point,'z',z_point, 'concentration', temp_concentration_list[num])
+    #print('num',num, 'x',x_point,'y',y_point,'z',z_point, 'concentration', temp_concentration_list[num])
     range_num = 5
-    if int(num % (Xrange*Yrange) / Xrange) >= RangetoNum(ymin) and temp_concentration_list[num] >= 61 :    #閾値設定
+    if int(num % (Xrange*Yrange) / Xrange) >= RangetoNum(ymin) and temp_concentration_list[num] >=  cut_concentration :    #閾値設定
         for numz in range(range_num):
             for numy in range(range_num):
                 for numx in range(range_num):
@@ -117,8 +134,23 @@ for num in range(cell_size):
 #リストの最大値，最小値
 #print('max',max(concentration_list),'min',min(concentration_list))
 
+#MSEを計算する--------------------------------------------------------------------------
+GT_list = np.ravel(GT_list)
+#前半分のデータのみ比較
+GT_list_mse = GT_list[:int(cell_size/2)]
+max_GT = max(GT_list_mse)
+GT_list_mse = GT_list_mse / max_GT  #正規化
+temp_concentration_list_mse = temp_concentration_list[:int(cell_size/2)]
+max_concentration = max(temp_concentration_list_mse)
+temp_concentration_list_mse = temp_concentration_list_mse / max_concentration   #正規化
+MSE = np.sum(np.square(GT_list_mse - temp_concentration_list_mse)) / int(cell_size/2)
+print('MSE', MSE, 'RMSE', np.sqrt(MSE))
+#END MSE--------------------------------------------------------------------------------
+
+
+
 # 散布図を表示、各点の色を濃度に対応させる
-fig = plt.figure()
+fig = plt.figure(1)
 ax = Axes3D(fig)
 
 # 表示範囲の設定
@@ -155,11 +187,57 @@ p = ax.scatter(x_fine_list, y_fine_list, z_fine_list, s=1, c=concentration_list,
 plt.colorbar(p,shrink=0.8)
 
 #実際のガス源の位置プロット
-x_resorce = [0.5, 1.0]
-y_resorce = [0.5, 1.0]
-z_resorce = [0.1, 0.1]
+x_resorce = [1.0]
+y_resorce = [1.0]
+z_resorce = [0.1]
+#x_resorce = [0.5, 1.0]
+#y_resorce = [0.5, 1.0]
+#z_resorce = [0.1, 0.1]
+#x_resorce = [0.5, 1.0, 1.5]
+#y_resorce = [0.5, 1.5, 1.0]
+#z_resorce = [0.2, 0.1, 0.1]
 q = ax.scatter(x_resorce, y_resorce, z_resorce, s=30, c="red")
+
+'''
+#ウェーブレット変換
+cA, cD = pywt.dwt(temp_concentration_list, "db1")
+x1 = np.arange(0, 195, 1)
+plt.figure(2)
+plt.title("cA")
+plt.plot(x1, cA)
+plt.figure(3)
+plt.title("cD")
+plt.plot(x1, cD)
+
+x2 = np.arange(0, 390, 1)
+plt.figure(4)
+plt.title("temp_concentration_list")
+plt.plot(x2, temp_concentration_list)
+
+icAcD = pywt.idwt(cA, None, "db1")
+plt.figure(5)
+plt.title("idwt")
+plt.plot(x2, icAcD)
+
+#離散コサイン変換
+y_dct = dct(temp_concentration_list)
+x1 = np.arange(0, 390, 1)
+plt.figure(2)
+plt.title("dct")
+plt.plot(x1, y_dct)
+
+x2 = np.arange(0, 390, 1)
+plt.figure(4)
+plt.title("temp_concentration_list")
+plt.plot(x2, temp_concentration_list)
+
+y_idct = idct(y_dct)
+plt.figure(5)
+plt.title("idct")
+plt.plot(x2, y_idct)
+'''
 
 # プロット
 plt.show()
+
 #----------------------------------------------------------------------
