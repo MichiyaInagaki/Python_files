@@ -11,9 +11,11 @@ import pywt
 
 #初期設定------------------------------------------------------------
 #csvファイルからリスト型で行列を取得  #rstrip("末尾の不要な文字")=>末尾の改行コードを削除
-csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/Split_OP2.csv').readlines()]
-csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/Split_OP_y2.csv').readlines()]
-GT = pd.read_csv('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/GT_11points.csv')
+#csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/Split_OP2.csv').readlines()]
+#csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/1123_dif_Ex1_dec/Split_OP_y2.csv').readlines()]
+csv_L=[list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/Split_OP2.csv').readlines()]
+csv_y=[list(map(float,line.rstrip().split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/ppmm2.csv').readlines()]
+GT = pd.read_csv('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/GT.csv')
 GT_list = GT["0"].values.tolist()
 #行列のサイズ確認
 N=len(csv_L)
@@ -25,7 +27,7 @@ print('y_colmn', len(csv_y[0]))
 #各種パラメータ***/////////////////
 iteration_num = 100     #FISTAの反復回数
 lamuda = 1.5            #L1ノルム係数
-plot_cell_num = 60      #プロットするセル[%]
+plot_cell_num = 87.5      #プロットするセル[%]
 #ロボットプラットフォームの寸法***
 Height = 0.273 + 0.01 + 0.091
 length_tilt = 0.038 + 0.01 + 0.02
