@@ -53,14 +53,14 @@ for num in range(cell_size):
     print('num',num, 'x',x_point,'y',y_point,'z',z_point)
     #GT書き出し用
     temp_grid = [x_point,y_point,z_point]
-    temp_concentration_list.append(scipy.stats.multivariate_normal(mean,cov).pdf(temp_grid))
+    temp_concentration_list.append(scipy.stats.multivariate_normal(mean,cov).pdf(temp_grid)*10)
     if int(num % (Xrange*Yrange) / Xrange) >= RangetoNum(ymin): 
         x_list.append(x_point)
         y_list.append(y_point)
         z_list.append(z_point)
         grid = [x_point,y_point,z_point]
         #3次元ガウス分布の計算
-        concentration_list.append(scipy.stats.multivariate_normal(mean,cov).pdf(grid))  
+        concentration_list.append(scipy.stats.multivariate_normal(mean,cov).pdf(grid)*10)  
         #表示するセルの閾値
         if(scipy.stats.multivariate_normal(mean,cov).pdf(grid)<0.1):
             x_list.pop(-1)
@@ -72,7 +72,7 @@ for num in range(cell_size):
 #pandasのDataFrame型に変換
 GT_list = pd.DataFrame(temp_concentration_list)
 #CSV出力
-GT_list.to_csv('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/GT.csv')
+GT_list.to_csv('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/simulation/GT_var005.csv')
 
 # 散布図を表示、各点の色を濃度に対応させる
 fig = plt.figure(1)
