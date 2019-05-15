@@ -14,7 +14,7 @@ import scipy.stats
 
 #初期設定------------------------------------------------------------
 #csvファイルからリスト型で行列を取得  #rstrip("末尾の不要な文字")=>末尾の改行コードを削除
-csv_mesh = [list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/mesh6.csv').readlines()]
+csv_mesh = [list(map(float,line.rstrip(",\n").split(","))) for line in open('C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/simulation/mesh11.csv').readlines()]
 #3次元ガウス分布の平均，分散////////
 mean = np.array([1.0, 1.6, 0.0])    #***
 cov  = np.diag([0.05,0.05,0.05])    #***
@@ -68,7 +68,7 @@ for i in range(0,N):          #行
         intersection = [mesh[i][j], mesh[i][j+1], mesh[i][j+2]] 
         #print(intersection)  
         #3次元ガウス分布の計算
-        temp_ppm.append(scipy.stats.multivariate_normal(mean,cov).pdf(intersection))
+        temp_ppm.append(scipy.stats.multivariate_normal(mean,cov).pdf(intersection)*10)
     if optical_len == -1:   #例外処理
         ppmm_list.append(0)
     else:    
@@ -83,6 +83,6 @@ ppmm_list_csv = np.reshape(ppmm_list,(N,1))
 #print(ppmm_list_csv)    
 
 #書き出し
-with open("C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/mesh_test/ppmm6.csv", "w", encoding="Shift_jis") as f: 
+with open("C:/Users/SENS/source/repos/Control_PTU/Control_PTU/csv/simulation/ppmm_11_var005.csv", "w", encoding="Shift_jis") as f: 
     writer = csv.writer(f, lineterminator="\n") 
     writer.writerows(ppmm_list_csv)    
